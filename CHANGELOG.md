@@ -8,6 +8,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- The env-proxy convention (`HTTPS_PROXY`/`HTTP_PROXY`/`ALL_PROXY`, `NO_PROXY`
+  exempting, gated by `proxy.from_environment`) now applies to one-shot
+  fetches, not only to the redirect-following wrapper. Search engines,
+  verticals and every other single-hop rider call the one-shot entry
+  directly, so on a host whose only egress is an HTTP proxy - a container
+  with no route and no resolver of its own - every engine the pool did not
+  hand a rotating proxy lane dialed the origin itself and failed with `net`.
+  Keyless search there collapsed to the one engine that happened to hold a
+  proxy lane, which a walled SERP turns into confident junk. Explicit lanes
+  and pool sticky lanes still win, and the h3/alt-svc direct paths stay
+  proxy-exempt.
 - A server-controlled `Set-Cookie: ...; Expires=` header no longer reaches
   unbounded i64 arithmetic in the cookie date parser: the year and clock
   fields are gated per RFC 6265 5.1.1 before any math, so an absurd year

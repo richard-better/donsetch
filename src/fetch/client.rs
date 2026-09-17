@@ -661,6 +661,20 @@ impl Fetcher {
             return Err(FetchError::InvalidUrl(url_str.into()));
         }
         let is_https = scheme == "https";
+        // The env-proxy convention has to live at this choke point, not only in
+        // the redirect-following wrapper: search engines, verticals and every
+        // other one-shot rider call this entry directly. On a host whose only
+        // egress is HTTPS_PROXY (a container with no route and no resolver of
+        // its own) a lane the pool calls `direct` is not a residential premium
+        // lane, it is a dial that cannot complete, so every engine the pool did
+        // not hand a rotating proxy failed with `net`. Explicit lanes still win,
+        // NO_PROXY still exempts, and proxy.from_environment still gates the
+        // ambient layer.
+        let env_proxy = match proxy {
+            Some(_) => None,
+            None => crate::transport::proxy::from_env_for(url_str),
+        };
+        let proxy = proxy.or(env_proxy.as_ref());
         let host = url
             .host_str()
             .ok_or_else(|| FetchError::InvalidUrl(url_str.into()))?;
