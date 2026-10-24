@@ -89,7 +89,7 @@ impl ExtractOptions {
 pub struct Extracted {
     pub markdown: String,
     pub title: Option<String>,
-    // byline/published/site are rendered into the markdown
+    // byline/published/site/image are rendered into the markdown
     // frontmatter; the MCP layer also reads them directly.
     #[allow(dead_code)]
     pub byline: Option<String>,
@@ -97,6 +97,9 @@ pub struct Extracted {
     pub published: Option<String>,
     #[allow(dead_code)]
     pub site: Option<String>,
+    /// The page's main image (one absolute https URL), also rendered
+    /// as an `image:` frontmatter line.
+    pub image: Option<String>,
     /// Full markdown length after focus, before pagination.
     pub total_chars: usize,
     pub next_offset: Option<usize>,
@@ -360,6 +363,7 @@ pub fn extract(
                 byline: None,
                 published: None,
                 site: None,
+                image: None,
                 next_offset: None,
                 thin: false,
                 content_kind: ContentKind::Page,
@@ -383,6 +387,7 @@ pub fn extract(
             byline: None,
             published: None,
             site: None,
+            image: None,
             next_offset: next,
             blocks_total: 0,
             blocks_shown: 0,
@@ -468,7 +473,7 @@ pub fn extract(
 
     let doc = Html::parse_document(&html_text);
     let base = metadata::base_url(&doc).unwrap_or_else(|| url.to_string());
-    let meta = metadata::metadata(&doc);
+    let meta = metadata::metadata(&doc, &base);
     let lang_info = language::detect(&doc);
 
     // A large page that yields almost nothing is a JS
@@ -590,6 +595,7 @@ fn empty_pdf(url: &str, reason: &str) -> Extracted {
         byline: None,
         published: None,
         site: None,
+        image: None,
         next_offset: None,
         blocks_total: 0,
         blocks_shown: 0,
@@ -658,6 +664,7 @@ fn downstream(
             byline: meta.byline.clone(),
             published: meta.published.clone(),
             site: meta.site.clone(),
+            image: meta.image.clone(),
             next_offset: None,
             blocks_total: all_blocks.len(),
             blocks_shown: shown,
@@ -864,6 +871,7 @@ fn downstream(
             byline: meta.byline.clone(),
             published: meta.published.clone(),
             site: meta.site.clone(),
+            image: meta.image.clone(),
             blocks_total,
             blocks_shown,
             lang: lang_info.code.clone(),
@@ -881,6 +889,7 @@ fn downstream(
         byline: meta.byline.clone(),
         published: meta.published.clone(),
         site: meta.site.clone(),
+        image: meta.image.clone(),
         total_chars: full.len(),
         next_offset: next,
         blocks_total,

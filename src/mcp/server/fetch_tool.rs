@@ -1983,7 +1983,7 @@ pub(super) async fn ghost_escalate(
     // returned as ContentOk : the agent would trust it.
     if !page.captcha {
         let doc = scraper::Html::parse_document(&page.html);
-        let meta = crate::extract::metadata::metadata(&doc);
+        let meta = crate::extract::metadata::metadata(&doc, url);
         let max_chars = opts.max_chars.unwrap_or(16_000).max(200);
         if let Some(fb) =
             crate::extract::fallback::text_fallback(&page.html, &meta, url, opts, max_chars)
@@ -3330,6 +3330,7 @@ pub(super) fn finish_result(
         "byline": ex.byline,
         "published": ex.published,
         "site": ex.site,
+        "image": ex.image,
         "blocks_shown": ex.blocks_shown,
         "blocks_total": ex.blocks_total,
         "total_chars": ex.total_chars,
@@ -3397,6 +3398,7 @@ mod fetch_output_contract_tests {
             byline: Some("A. Author".into()),
             published: Some("2026-09-04".into()),
             site: Some("Example Site".into()),
+            image: None,
             total_chars: markdown.len(),
             next_offset: None,
             blocks_total: 4,

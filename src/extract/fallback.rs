@@ -79,6 +79,7 @@ pub fn text_fallback(
         byline: meta.byline.clone(),
         published: meta.published.clone(),
         site: meta.site.clone(),
+        image: meta.image.clone(),
         total_chars: full.len(),
         next_offset: next,
         blocks_total,

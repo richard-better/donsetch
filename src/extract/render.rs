@@ -33,6 +33,11 @@ pub fn render(meta: &Meta, url: &str, kept: &[&Block], opts: &super::ExtractOpti
     }
     out.push_str(url);
     out.push('\n');
+    // The main image, for assistants that can show a product photo.
+    // One line, one absolute https URL (validated in metadata).
+    if let Some(img) = &meta.image {
+        out.push_str(&format!("image: {img}\n"));
+    }
     // Description as a one-line summary : agents use it to
     // decide relevance before reading the body. Always surface it
     // (capped): for JS-rendered SPAs the meta description is often

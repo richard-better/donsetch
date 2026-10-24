@@ -532,6 +532,7 @@ pub fn parse(bytes: &[u8]) -> Result<ParsedPdf, PdfFailure> {
         byline: raw.meta.author.clone(),
         published: pdf_date(&raw.meta.created).or(pdf_date(&raw.meta.modified)),
         site: None,
+        image: None,
         description: raw.meta.subject.clone(),
         canonical: None,
     };

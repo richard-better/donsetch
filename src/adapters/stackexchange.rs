@@ -104,6 +104,7 @@ pub fn extract(html: &str, url: &str, opts: &ExtractOptions) -> Option<Extracted
         title: Some(title),
         byline: None,
         published: None,
+        image: None,
         site: Some(
             host.split('.')
                 .next()

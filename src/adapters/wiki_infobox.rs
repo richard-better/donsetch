@@ -95,6 +95,7 @@ pub fn extract(html: &str, url: &str, opts: &ExtractOptions) -> Option<Extracted
         byline: None,
         published: None,
         site: Some("wikipedia".to_string()),
+        image: None,
         total_chars: total,
         next_offset: next,
         blocks_total: fields.len(),

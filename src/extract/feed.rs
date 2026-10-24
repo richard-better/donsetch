@@ -251,6 +251,7 @@ fn finish(
         byline: None,
         published: None,
         site: None,
+        image: None,
         total_chars: total,
         next_offset: next,
         blocks_total: total_items,

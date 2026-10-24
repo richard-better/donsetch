@@ -45,6 +45,7 @@ pub fn extract(body: &[u8], url: &str, opts: &ExtractOptions) -> Option<Extracte
         byline: None,
         published: card.published.clone(),
         site: Some(registry.to_string()),
+        image: None,
         total_chars: total,
         next_offset: next,
         blocks_total: deps_n,

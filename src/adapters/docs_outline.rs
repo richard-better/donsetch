@@ -133,6 +133,7 @@ pub fn extract(html: &str, url: &str, opts: &ExtractOptions) -> Option<Extracted
         byline: None,
         published: None,
         site: None,
+        image: None,
         total_chars: total,
         next_offset: next,
         blocks_total: n,

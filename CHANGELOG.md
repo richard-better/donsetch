@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Extracted pages now report their main image so an assistant can show a
+  product photo: the markdown frontmatter gains one `image:` line after the
+  URL, and `Extracted` / the MCP fetch debug metadata carry `image`. The
+  source is `og:image` (incl. `og:image:secure_url`/`og:image:url`), then
+  `twitter:image`, then JSON-LD `Product`/`ProductGroup` (or any
+  `offers`-bearing item, also inside `@graph`), then `<link rel="image_src">`.
+  Relative and protocol-relative URLs resolve against the page (or
+  `<base href>`), HTML entities are decoded, and only plain `https:` URLs
+  survive: http, data:, blob:, javascript:, credentials, whitespace or
+  control characters, and anything over 1024 chars are dropped.
+
 ### Fixed
 - The env-proxy convention (`HTTPS_PROXY`/`HTTP_PROXY`/`ALL_PROXY`, `NO_PROXY`
   exempting, gated by `proxy.from_environment`) now applies to one-shot

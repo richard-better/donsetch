@@ -406,7 +406,7 @@ fn metadata_og_title() {
 <title>Something Else</title>
 </head><body><p>Content</p></body></html>"#;
     let doc = Html::parse_document(html);
-    let meta = metadata::metadata(&doc);
+    let meta = metadata::metadata(&doc, "https://example.com/page");
     assert_eq!(meta.title, Some("The Real Title".to_string()));
 }
 
@@ -416,7 +416,7 @@ fn metadata_description() {
 <meta name="description" content="A comprehensive guide to Rust programming.">
 </head><body><p>Content</p></body></html>"#;
     let doc = Html::parse_document(html);
-    let meta = metadata::metadata(&doc);
+    let meta = metadata::metadata(&doc, "https://example.com/page");
     assert_eq!(
         meta.description.as_deref(),
         Some("A comprehensive guide to Rust programming.")
@@ -429,7 +429,7 @@ fn metadata_canonical() {
 <link rel="canonical" href="https://example.com/canonical-page">
 </head><body><p>Content</p></body></html>"#;
     let doc = Html::parse_document(html);
-    let meta = metadata::metadata(&doc);
+    let meta = metadata::metadata(&doc, "https://example.com/page");
     assert_eq!(
         meta.canonical.as_deref(),
         Some("https://example.com/canonical-page")
@@ -442,7 +442,7 @@ fn metadata_published_time() {
 <meta property="article:published_time" content="2026-01-15T10:30:00Z">
 </head><body><p>Content</p></body></html>"#;
     let doc = Html::parse_document(html);
-    let meta = metadata::metadata(&doc);
+    let meta = metadata::metadata(&doc, "https://example.com/page");
     assert_eq!(meta.published.as_deref(), Some("2026-01-15"));
 }
 
@@ -454,7 +454,7 @@ fn metadata_json_ld_author() {
 </script>
 </head><body><p>Content</p></body></html>"#;
     let doc = Html::parse_document(html);
-    let meta = metadata::metadata(&doc);
+    let meta = metadata::metadata(&doc, "https://example.com/page");
     assert_eq!(meta.byline.as_deref(), Some("Jane Doe"));
 }
 
@@ -1239,7 +1239,7 @@ fn content_density_large_page_many_chars_not_thin() {
 #[test]
 fn short_pdf_is_not_classified_as_an_html_shell() {
     let doc = Html::parse_document("<html lang=\"en\"><title>Receipt</title></html>");
-    let meta = metadata::metadata(&doc);
+    let meta = metadata::metadata(&doc, "https://example.com/page");
     let blocks = vec![blocks::Block::Para {
         md: "Total due: EUR 12".to_string(),
         link_density: 0.0,
@@ -1706,7 +1706,7 @@ fn jsonld_unicode_escape_decoded() {
 </script>
 </head><body><p>Content</p></body></html>"#;
     let doc = Html::parse_document(html);
-    let meta = metadata::metadata(&doc);
+    let meta = metadata::metadata(&doc, "https://example.com/page");
     // Should decode to actual Chinese characters, not escape sequences.
     assert_eq!(meta.byline.as_deref(), Some("维基媒体"));
 }
@@ -2383,7 +2383,10 @@ fn fallback_br_line_and_paragraph_breaks() {
     let html = format!(
         "<html><body><div>{long}<br>{long} beta</div><div>{long} one<br><br>{long} two</div></body></html>",
     );
-    let meta = metadata::metadata(&Html::parse_fragment("<div></div>"));
+    let meta = metadata::metadata(
+        &Html::parse_fragment("<div></div>"),
+        "https://example.com/page",
+    );
     let r = fallback::text_fallback(
         &html,
         &meta,
@@ -2405,4 +2408,35 @@ fn fallback_br_line_and_paragraph_breaks() {
         !m.contains("\n "),
         "no leading space after any br newline, got: {m:?}"
     );
+}
+
+#[test]
+fn frontmatter_carries_one_image_line_after_the_url() {
+    let html = r#"<html><head><title>Mug</title>
+<meta property="og:site_name" content="Shop">
+<meta property="og:image" content="/img/mug.jpg?w=1&amp;h=2">
+<meta property="og:image" content="https://cdn.example.com/other.jpg">
+</head><body><article><h1>Mug</h1><p>A very nice ceramic mug that holds coffee and tea for long mornings at the desk.</p></article></body></html>"#;
+    let ex = extract_html(html);
+    assert_eq!(
+        ex.image.as_deref(),
+        Some("https://example.com/img/mug.jpg?w=1&h=2")
+    );
+    assert!(
+        ex.markdown.starts_with(
+            "Shop\nhttps://example.com/page\nimage: https://example.com/img/mug.jpg?w=1&h=2\n"
+        ),
+        "{}",
+        ex.markdown
+    );
+    assert_eq!(ex.markdown.matches("\nimage: ").count(), 1);
+}
+
+#[test]
+fn frontmatter_has_no_image_line_without_an_image() {
+    let ex = extract_html(
+        "<html><head><title>T</title></head><body><article><p>Some body text that is long enough to be a paragraph of its own.</p></article></body></html>",
+    );
+    assert_eq!(ex.image, None);
+    assert!(!ex.markdown.contains("image:"), "{}", ex.markdown);
 }
