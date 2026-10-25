@@ -3222,12 +3222,34 @@ pub(super) fn format_fetch_markdown(
     source_url: &str,
     display_url: &str,
 ) -> String {
-    let body = strip_source_frontmatter(&ex.markdown, source_url, ex.title.as_deref());
+    let mut body = strip_source_frontmatter(&ex.markdown, source_url, ex.title.as_deref());
     let mut markdown = String::new();
     if let Some(title) = &ex.title {
         markdown.push_str(&format!("# {title}\n"));
     }
     markdown.push_str(display_url);
+    // The page's main image sits right under the source URL on every
+    // path, including the raw-text fallback whose markdown carries no
+    // frontmatter. A rendered `image:` line in the body is the same
+    // fact, so it moves up instead of repeating.
+    if let Some(image) = &ex.image {
+        let line = format!("image: {image}");
+        if let Some(first) = body.lines().position(|l| l.trim() == line)
+            && first < 8
+        {
+            body = body
+                .lines()
+                .enumerate()
+                .filter(|(i, _)| *i != first)
+                .map(|(_, l)| l)
+                .collect::<Vec<_>>()
+                .join("\n")
+                .trim()
+                .to_string();
+        }
+        markdown.push('\n');
+        markdown.push_str(&line);
+    }
     if !body.is_empty() {
         markdown.push_str("\n\n");
         markdown.push_str(&body);
@@ -3459,6 +3481,33 @@ mod fetch_output_contract_tests {
                 "https://example.com/page"
             )
             .contains("# Actual first section")
+        );
+    }
+
+    #[test]
+    fn image_line_sits_right_after_the_url_on_every_path() {
+        let url = "https://example.com/p";
+        // Fallback shape: no frontmatter in the markdown.
+        let mut fallback = extracted("# Example\n\nhttps://example.com/p\n\nBody text.");
+        fallback.image = Some("https://cdn.example.com/a.jpg".into());
+        assert_eq!(
+            format_fetch_markdown(&fallback, url, url),
+            "# Example\nhttps://example.com/p\nimage: https://cdn.example.com/a.jpg\n\nBody text."
+        );
+        // Block-render shape: the frontmatter already has the line.
+        let mut rendered = extracted(
+            "# Example\nhttps://example.com/p\nimage: https://cdn.example.com/a.jpg\n> About.\n\nBody text.",
+        );
+        rendered.image = Some("https://cdn.example.com/a.jpg".into());
+        assert_eq!(
+            format_fetch_markdown(&rendered, url, url),
+            "# Example\nhttps://example.com/p\nimage: https://cdn.example.com/a.jpg\n\n> About.\n\nBody text."
+        );
+        // No image: output is unchanged.
+        let plain = extracted("# Example\nhttps://example.com/p\n\nBody text.");
+        assert_eq!(
+            format_fetch_markdown(&plain, url, url),
+            "# Example\nhttps://example.com/p\n\nBody text."
         );
     }
 

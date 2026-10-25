@@ -544,6 +544,15 @@ fn machine_meta(result: &Value, sc: &Value) -> Value {
         .and_then(|m| m.get("com.donsetch/search-debug"))
         .filter(|p| p.is_object());
     let mut meta = sc.clone();
+    // Fetch keeps its diagnostics out of the model surface, but the
+    // page's main image is evidence a script wants beside the markdown.
+    if let Some(image) = result
+        .pointer("/_meta/com.donsetch~1fetch-debug/image")
+        .filter(|v| v.is_string())
+        && let Some(meta_obj) = meta.as_object_mut()
+    {
+        meta_obj.insert("image".to_string(), image.clone());
+    }
     if let Some(dbg) = debug.and_then(|p| p.as_object())
         && let Some(meta_obj) = meta.as_object_mut()
     {
@@ -783,6 +792,27 @@ mod tests {
         assert_eq!(env["ok"], json!(true));
         assert_eq!(env["content"], json!("# Title\nContent"));
         assert_eq!(env["meta"]["verdict"], json!("ContentOk"));
+    }
+
+    #[test]
+    fn json_envelope_fetch_meta_carries_the_page_image() {
+        let v = json!({
+            "content": [{"type": "text", "text": "# T\nhttps://e.com/\nimage: https://e.com/i.jpg"}],
+            "structuredContent": {"url": "https://e.com/", "content_ok": true},
+            "_meta": {"com.donsetch/fetch-debug": {"image": "https://e.com/i.jpg"}},
+            "isError": false
+        });
+        let env = render_json_envelope(&v, "");
+        assert_eq!(env["meta"]["image"], json!("https://e.com/i.jpg"));
+
+        let none = json!({
+            "content": [{"type": "text", "text": "x"}],
+            "structuredContent": {"url": "https://e.com/"},
+            "_meta": {"com.donsetch/fetch-debug": {"image": null}},
+            "isError": false
+        });
+        let env = render_json_envelope(&none, "");
+        assert!(env["meta"].get("image").is_none());
     }
 
     #[test]

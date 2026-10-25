@@ -20,6 +20,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   control characters, and anything over 1024 chars are dropped.
 
 ### Fixed
+- `fetch` now shows the page's main image. The canonical fetch text dropped
+  the frontmatter, and the raw-text fallback never rendered one, so the
+  `image:` line was missing from `content`. It now sits right under the URL
+  line on every path that has page HTML, and the CLI `--json` `meta` object
+  carries `image`. Pages without an image print as before.
 - The env-proxy convention (`HTTPS_PROXY`/`HTTP_PROXY`/`ALL_PROXY`, `NO_PROXY`
   exempting, gated by `proxy.from_environment`) now applies to one-shot
   fetches, not only to the redirect-following wrapper. Search engines,

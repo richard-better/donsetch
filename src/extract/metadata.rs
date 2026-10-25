@@ -369,6 +369,21 @@ mod tests {
     }
 
     #[test]
+    fn https_secure_url_wins_over_an_earlier_http_og_image() {
+        // Shopify shape: the plain og:image is http, the secure_url follows.
+        let got = image_of(
+            r#"<meta property="og:image" content="http://somacoffeecompany.ie/cdn/shop/files/COFFEESTOCKIMAGES_10.png?v=1781627653">
+<meta property="og:image:secure_url" content="https://somacoffeecompany.ie/cdn/shop/files/COFFEESTOCKIMAGES_10.png?v=1781627653">"#,
+        );
+        assert_eq!(
+            got.as_deref(),
+            Some(
+                "https://somacoffeecompany.ie/cdn/shop/files/COFFEESTOCKIMAGES_10.png?v=1781627653"
+            )
+        );
+    }
+
+    #[test]
     fn image_from_og_image_secure_url_and_url() {
         let got = image_of(
             r#"<meta property="og:image:secure_url" content="https://cdn.example.com/s.jpg">"#,
